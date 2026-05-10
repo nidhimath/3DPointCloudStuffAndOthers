@@ -1,0 +1,175 @@
+{
+  "summary": {
+    "chamfer_distance": 0.9572843488039762,
+    "f_score": 0.44896311782968457,
+    "icp_fitness": 0.3642242704666603,
+    "icp_rmse": 0.031133959385089026,
+    "inlier_ratio": 0.3642242704666603,
+    "ate": 0.013970618912655122,
+    "rpe_translation": 0.0026712444634855287,
+    "rpe_rotation": 7.686913755754125,
+    "psnr": null,
+    "ssim": null,
+    "lpips": null,
+    "rce_l1": null,
+    "rce_rmse": null,
+    "rce_coverage": null
+  },
+  "detailed": {
+    "icp": {
+      "transformation": [
+        [
+          0.9999987940082967,
+          0.0011481962376537274,
+          0.0010457663943784657,
+          -0.13072208959570042
+        ],
+        [
+          -0.0011499128953106885,
+          0.9999979900905517,
+          0.0016424113944073307,
+          0.3272995678627158
+        ],
+        [
+          -0.0010438784818989709,
+          -0.0016436119539352213,
+          0.9999981044269336,
+          -0.12118358677221355
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "fitness": 0.3642242704666603,
+      "inlier_rmse": 0.031133959385089026,
+      "num_correspondences": 148067,
+      "inlier_ratio": 0.3642242704666603,
+      "threshold": 0.1,
+      "method": "point_to_plane"
+    },
+    "geometry": {
+      "chamfer": {
+        "chamfer_distance": 0.9572843488039762,
+        "pred_to_gt_mean": 0.9224634031897808,
+        "gt_to_pred_mean": 0.03482094561419539,
+        "n_pred": 406527,
+        "n_gt": 313627
+      },
+      "f_score": {
+        "threshold": 0.05,
+        "precision": 0.31627911553230165,
+        "recall": 0.7734283081494897,
+        "f_score": 0.44896311782968457,
+        "n_pred": 406527,
+        "n_gt": 313627
+      },
+      "hausdorff": {
+        "hausdorff": 9.102605116235262,
+        "directed_pred_to_gt": 9.102605116235262,
+        "directed_gt_to_pred": 0.48777962289231735,
+        "quantile": 0.95,
+        "pred_to_gt_quantile": 3.9935203500776226,
+        "gt_to_pred_quantile": 0.07961133400530587
+      }
+    },
+    "preprocess": {
+      "gt": {
+        "input_points": 410302,
+        "after_voxel": 325912,
+        "after_outliers": 313627,
+        "centroid": [
+          0.2888518195310198,
+          -0.059721322862684584,
+          4.81237121541354
+        ]
+      },
+      "pred": {
+        "input_points": 450838,
+        "after_voxel": 421752,
+        "after_outliers": 406527,
+        "centroid": [
+          0.15755592202551558,
+          0.26759261584510374,
+          4.691747091375638
+        ]
+      }
+    },
+    "config": {
+      "voxel_size": 0.02,
+      "f_score_threshold": 0.05,
+      "icp_threshold": 0.1,
+      "icp_method": "point_to_plane",
+      "pose_with_scaling": true,
+      "rpe_delta": 1,
+      "include_lpips": false,
+      "lpips_net": "alex"
+    },
+    "inputs": {
+      "gt": "/Users/nidhimathihalli/Downloads/3D points cloud stuff/pointclouds/568ef8c24a0b1408_standard.ply",
+      "pred": "/Users/nidhimathihalli/Downloads/3D points cloud stuff/pointclouds/568ef8c24a0b1408_4.ply",
+      "gt_traj": "/Users/nidhimathihalli/Downloads/3D points cloud stuff/trajectories/568ef8c24a0b1408.txt",
+      "pred_traj": "/Users/nidhimathihalli/Downloads/3D points cloud stuff/trajectories/568ef8c24a0b1408_4.txt",
+      "rendered_images": null,
+      "gt_images": null,
+      "rce_intrinsics_json": null,
+      "rce_video": null,
+      "rce_image_dir": null
+    },
+    "pose": {
+      "ate": {
+        "ate_rmse": 0.013970618912655122,
+        "ate_mean": 0.012748793611581087,
+        "ate_median": 0.011502567192897675,
+        "ate_max": 0.02721775302140044,
+        "aligned_with_scale": true,
+        "n_frames": 66
+      },
+      "rpe": {
+        "rpe_translation_rmse": 0.0026712444634855287,
+        "rpe_translation_mean": 0.0023834985890256338,
+        "rpe_rotation_rmse_deg": 7.686913755754125,
+        "rpe_rotation_mean_deg": 5.210262626211263,
+        "delta": 1,
+        "n_pairs": 65
+      },
+      "alignment": {
+        "rotation": [
+          [
+            -0.9776751874155962,
+            -0.15689513960172624,
+            0.13976817621058713
+          ],
+          [
+            0.14793246801318505,
+            -0.98634219843941,
+            -0.07242273458824688
+          ],
+          [
+            0.1492220252489795,
+            -0.05012965935518034,
+            0.9875321789357174
+          ]
+        ],
+        "translation": [
+          -0.20730587974626724,
+          -0.057125343394943746,
+          0.033385040770641916
+        ],
+        "scale": 0.9620163580216833,
+        "with_scaling": true
+      },
+      "pose_consistency": {
+        "pose_consistency_score": 0.17719333940117568,
+        "ate_term": 0.8696136998285641,
+        "rpe_translation_term": 0.947977141585208,
+        "rpe_rotation_term": 0.21494292501333281,
+        "ate_scale": 0.1,
+        "rpe_translation_scale": 0.05,
+        "rpe_rotation_scale_deg": 5.0
+      }
+    }
+  }
+}

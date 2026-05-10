@@ -1,0 +1,175 @@
+{
+  "summary": {
+    "chamfer_distance": 6.911859578949834,
+    "f_score": 0.00944817286527298,
+    "icp_fitness": 0.0110427759091389,
+    "icp_rmse": 0.051550282418666375,
+    "inlier_ratio": 0.0110427759091389,
+    "ate": 0.8685263001266343,
+    "rpe_translation": 0.03564164053428378,
+    "rpe_rotation": 3.290862553902445,
+    "psnr": null,
+    "ssim": null,
+    "lpips": null,
+    "rce_l1": null,
+    "rce_rmse": null,
+    "rce_coverage": null
+  },
+  "detailed": {
+    "icp": {
+      "transformation": [
+        [
+          0.9425893765647313,
+          0.3043211107730778,
+          0.13752791980230716,
+          -0.039205215238584584
+        ],
+        [
+          -0.3333348530994317,
+          0.882422744649351,
+          0.3319909267354887,
+          0.33949547632392163
+        ],
+        [
+          -0.02032591686714011,
+          -0.3587739696011248,
+          0.9332031375001706,
+          -1.5895252479243633
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "fitness": 0.0110427759091389,
+      "inlier_rmse": 0.051550282418666375,
+      "num_correspondences": 5857,
+      "inlier_ratio": 0.0110427759091389,
+      "threshold": 0.1,
+      "method": "point_to_plane"
+    },
+    "geometry": {
+      "chamfer": {
+        "chamfer_distance": 6.911859578949834,
+        "pred_to_gt_mean": 5.889718853688518,
+        "gt_to_pred_mean": 1.022140725261315,
+        "n_pred": 530392,
+        "n_gt": 366596
+      },
+      "f_score": {
+        "threshold": 0.05,
+        "precision": 0.006704475180621125,
+        "recall": 0.015993082303134787,
+        "f_score": 0.00944817286527298,
+        "n_pred": 530392,
+        "n_gt": 366596
+      },
+      "hausdorff": {
+        "hausdorff": 22.72189732710698,
+        "directed_pred_to_gt": 22.72189732710698,
+        "directed_gt_to_pred": 2.5767516713522123,
+        "quantile": 0.95,
+        "pred_to_gt_quantile": 16.403641638101977,
+        "gt_to_pred_quantile": 1.9189651143888065
+      }
+    },
+    "preprocess": {
+      "gt": {
+        "input_points": 561515,
+        "after_voxel": 382145,
+        "after_outliers": 366596,
+        "centroid": [
+          -0.18596254077907057,
+          0.5431053162325371,
+          5.141026704165137
+        ]
+      },
+      "pred": {
+        "input_points": 720023,
+        "after_voxel": 551302,
+        "after_outliers": 530392,
+        "centroid": [
+          -3.773683088706172,
+          1.9056145001528642,
+          -3.3510070192705816
+        ]
+      }
+    },
+    "config": {
+      "voxel_size": 0.02,
+      "f_score_threshold": 0.05,
+      "icp_threshold": 0.1,
+      "icp_method": "point_to_plane",
+      "pose_with_scaling": true,
+      "rpe_delta": 1,
+      "include_lpips": false,
+      "lpips_net": "alex"
+    },
+    "inputs": {
+      "gt": "/Users/nidhimathihalli/Downloads/3D points cloud stuff/pointclouds/ff887646981745a6_standard.ply",
+      "pred": "/Users/nidhimathihalli/Downloads/3D points cloud stuff/pointclouds/ff887646981745a6_2.ply",
+      "gt_traj": "/Users/nidhimathihalli/Downloads/3D points cloud stuff/trajectories/ff887646981745a6.txt",
+      "pred_traj": "/Users/nidhimathihalli/Downloads/3D points cloud stuff/trajectories/ff887646981745a6_2.txt",
+      "rendered_images": null,
+      "gt_images": null,
+      "rce_intrinsics_json": null,
+      "rce_video": null,
+      "rce_image_dir": null
+    },
+    "pose": {
+      "ate": {
+        "ate_rmse": 0.8685263001266343,
+        "ate_mean": 0.7506042868111862,
+        "ate_median": 0.6259783729859718,
+        "ate_max": 1.8826440706270107,
+        "aligned_with_scale": true,
+        "n_frames": 263
+      },
+      "rpe": {
+        "rpe_translation_rmse": 0.03564164053428378,
+        "rpe_translation_mean": 0.034200476724714164,
+        "rpe_rotation_rmse_deg": 3.290862553902445,
+        "rpe_rotation_mean_deg": 1.7802869682247886,
+        "delta": 1,
+        "n_pairs": 262
+      },
+      "alignment": {
+        "rotation": [
+          [
+            -0.5685127764782953,
+            -0.010614828094138416,
+            0.822605949653582
+          ],
+          [
+            0.16255598504329238,
+            0.978752789720597,
+            0.12497411068198847
+          ],
+          [
+            -0.8064544467653112,
+            0.20476889910013413,
+            -0.5547079621330264
+          ]
+        ],
+        "translation": [
+          0.1610442421469241,
+          0.5846020525162121,
+          2.4350939075722646
+        ],
+        "scale": 0.1302253527491008,
+        "with_scaling": true
+      },
+      "pose_consistency": {
+        "pose_consistency_score": 4.291589350224423e-05,
+        "ate_term": 0.00016905896454400115,
+        "rpe_translation_term": 0.4902534333406301,
+        "rpe_rotation_term": 0.5177967383281172,
+        "ate_scale": 0.1,
+        "rpe_translation_scale": 0.05,
+        "rpe_rotation_scale_deg": 5.0
+      }
+    }
+  }
+}

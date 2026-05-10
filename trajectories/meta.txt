@@ -1,0 +1,19 @@
+Filename: 2cf1a544b179b1a7.txt
+URL: https://www.youtube.com/watch?v=s0lC3els3Dw
+Timestamp: 179.81s
+Saved -> results/2cf1a544b179b1a7.jpg
+
+Filename: 568ef8c24a0b1408.txt
+URL: https://www.youtube.com/watch?v=0uKEQoTLteg
+Timestamp: 63.10s
+Saved -> results/568ef8c24a0b1408.jpg
+
+Filename: ff887646981745a6.txt
+URL: https://www.youtube.com/watch?v=LAURLSM2kj4
+Timestamp: 270.84s
+Saved -> results/ff887646981745a6.jpg
+
+Filename: bac7820ec2cd15a8.txt
+URL: https://www.youtube.com/watch?v=CXyTf3GGinY
+Timestamp: 85.62s
+Saved -> results/bac7820ec2cd15a8.jpg
