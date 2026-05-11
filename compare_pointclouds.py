@@ -1,8 +1,11 @@
-"""Compare each scene's baseline point cloud against its 4 trajectory variants.
+"""Compare each scene's baseline point cloud against trajectory variants.
 
 For every scene `<base>` in `pointclouds/` we:
   baseline = pointclouds/<base>_standard.ply   trajectory: trajectories/<base>.txt
-  variants = pointclouds/<base>_{1,2,3,4}.ply  trajectory: trajectories/<base>_{1..4}.txt
+  variants = pointclouds/<base>_<suf>.ply     trajectory: trajectories/<base>_<suf>.txt
+
+Default suffices are ``1``, ``2``, ``3``, ``4``. Override with ``--variants``,
+e.g. ``--variants 45deg 90deg 135deg 180deg``.
 
 For every (baseline, variant) pair we call `evaluation.evaluate.evaluate_pair`,
 which computes:
@@ -17,6 +20,7 @@ Output:
 
 from __future__ import annotations
 
+import argparse
 import json
 import sys
 import time
@@ -35,7 +39,7 @@ from evaluation.evaluate import evaluate_pair, EvalConfig  # noqa: E402
 
 SCENES   = sorted({p.stem.rsplit("_", 1)[0]
                    for p in PCS_DIR.glob("*_standard.ply")})
-VARIANTS = ["1", "2", "3", "4"]
+DEFAULT_VARIANTS = ["1", "2", "3", "4"]
 
 CONFIG = EvalConfig(
     voxel_size=0.02,            # our clouds are fused at 1.5 cm; 2 cm gives a
@@ -65,7 +69,7 @@ def write_report(per_scene: dict, txt_path: Path) -> None:
     push = lines.append
 
     push("=" * 96)
-    push("POINT CLOUD COMPARISON  —  baseline (`_standard`) vs trajectory variants")
+    push("POINT CLOUD COMPARISON  —  baseline (`_standard`) vs trajectory variant(s)")
     push("=" * 96)
     push(f"Voxel size (preprocess) : {CONFIG.voxel_size} m")
     push(f"F-score threshold       : {CONFIG.f_score_threshold} m")
@@ -75,8 +79,8 @@ def write_report(per_scene: dict, txt_path: Path) -> None:
     push(f"Trajectory alignment    : Sim(3) Umeyama (with_scaling=True)")
     push("")
     push("Notes:")
-    push("  - 'Baseline' is each scene's `_standard` cloud (fused along the")
-    push("    un-altered reference trajectory). 'Variant N' is `_N` (N in 1..4).")
+    push("  - 'Baseline' is each scene's fused `_standard` cloud. Each variant matches")
+    push("    `pointclouds/<scene>_<suffix>.ply` and its trajectory `.txt`.")
     push("  - Lower is better for: Chamfer, ICP-RMSE, ATE, RPE-t, RPE-r.")
     push("  - Higher is better for: F-score, ICP-fitness, Inlier-ratio, PCS.")
     push("")
@@ -95,7 +99,7 @@ def write_report(per_scene: dict, txt_path: Path) -> None:
             geom_extra = d.get("geometry", {}).get("hausdorff", {})
             haus = geom_extra.get("hausdorff")
             push("")
-            push(f"  -- baseline  vs  _{variant}   "
+            push(f"  -- baseline  vs  {variant!r}   "
                  f"(pred: pointclouds/{scene}_{variant}.ply, "
                  f"pred_traj: trajectories/{scene}_{variant}.txt) --")
             push(f"     Chamfer distance        : {fmt(s['chamfer_distance'])}  m")
@@ -120,7 +124,7 @@ def write_report(per_scene: dict, txt_path: Path) -> None:
     push("SUMMARY TABLE  (one row per [scene, variant] pair)")
     push("=" * 96)
     headers = [
-        ("Scene", 18, "s"), ("Var", 4, "s"),
+        ("Scene", 18, "s"), ("Var", 9, "s"),
         ("Chamfer", 10, "f"), ("F@5cm", 10, "f"), ("Haus", 10, "f"),
         ("ICP-fit", 10, "f"), ("ICP-rmse", 10, "f"), ("Inlier", 10, "f"),
         ("ATE", 10, "f"), ("RPE-t", 10, "f"), ("RPE-r°", 10, "f"), ("PCS", 10, "f"),
@@ -134,7 +138,7 @@ def write_report(per_scene: dict, txt_path: Path) -> None:
             "pose_consistency_score")
         row = [
             scene[:18].rjust(18),
-            f"_{variant}".rjust(4),
+            str(variant)[:9].rjust(9),
             fmt(s["chamfer_distance"]),
             fmt(s["f_score"]),
             fmt(haus),
@@ -150,7 +154,7 @@ def write_report(per_scene: dict, txt_path: Path) -> None:
 
     push("")
     push("=" * 96)
-    push("PER-SCENE AVERAGES  (mean over the 4 variant comparisons)")
+    push("PER-SCENE AVERAGES  (mean over variant comparisons)")
     push("=" * 96)
     avg_headers = [
         ("Scene", 18), ("Chamfer", 10), ("F@5cm", 10), ("Haus", 10),
@@ -194,12 +198,26 @@ def write_report(per_scene: dict, txt_path: Path) -> None:
 
 
 def main() -> int:
+    ap = argparse.ArgumentParser(
+        description="Compare `<scene>_standard.ply` to named variant clouds.",
+    )
+    ap.add_argument(
+        "--variants",
+        nargs="+",
+        default=DEFAULT_VARIANTS,
+        metavar="SUF",
+        help="Variant suffixes (default: 1 2 3 4), e.g. 45deg 90deg 135deg 180deg",
+    )
+    args = ap.parse_args()
+    variants: list[str] = args.variants
+
     if not SCENES:
         print(f"No `<scene>_standard.ply` files found in {PCS_DIR}", file=sys.stderr)
         return 1
     JSON_DIR.mkdir(parents=True, exist_ok=True)
 
     print(f"Found {len(SCENES)} scene(s): {SCENES}")
+    print(f"Variants: {variants}")
     print(f"Output report → {OUT_TXT}")
     print(f"Per-pair JSON → {JSON_DIR}/")
 
@@ -217,7 +235,7 @@ def main() -> int:
             baseline_traj = None
 
         per_scene[scene] = {}
-        for variant in VARIANTS:
+        for variant in variants:
             pred_ply  = PCS_DIR / f"{scene}_{variant}.ply"
             pred_traj = TRAJ_DIR / f"{scene}_{variant}.txt"
             if not pred_ply.exists():
@@ -225,7 +243,7 @@ def main() -> int:
                 continue
 
             print("\n" + "=" * 78)
-            print(f"== {scene}   baseline  vs  _{variant}")
+            print(f"== {scene}   baseline  vs  {variant!r}")
             print("=" * 78)
             t0 = time.time()
             result = evaluate_pair(

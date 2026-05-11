@@ -1,0 +1,85 @@
+================================================================================================
+POINT CLOUD COMPARISON  —  baseline (`_standard`) vs trajectory variant(s)
+================================================================================================
+Voxel size (preprocess) : 0.02 m
+F-score threshold       : 0.05 m
+ICP method              : point_to_plane, max_iter=200
+ICP corresp. threshold  : 5.0 * voxel = 0.1 m
+Trajectory alignment    : Sim(3) Umeyama (with_scaling=True)
+
+Notes:
+  - 'Baseline' is each scene's `_standard` cloud (fused along the
+    un-altered reference trajectory). 'Variant N' is `_N` (N in 1..4).
+  - Lower is better for: Chamfer, ICP-RMSE, ATE, RPE-t, RPE-r.
+  - Higher is better for: F-score, ICP-fitness, Inlier-ratio, PCS.
+
+================================================================================================
+SCENE  ff887646981745a6
+  baseline  : pointclouds/ff887646981745a6_standard.ply  (traj: trajectories/ff887646981745a6.txt)
+================================================================================================
+
+  -- baseline  vs  '45deg'   (pred: pointclouds/ff887646981745a6_45deg.ply, pred_traj: trajectories/ff887646981745a6_45deg.txt) --
+     Chamfer distance        :     5.9950  m
+     F-score @ 0.05 m         :     0.0451
+     Hausdorff distance      :    60.0398  m
+     ICP fitness             :     0.0530
+     ICP RMSE                :     0.0483  m
+     Inlier ratio            :     0.0530
+     ATE (RMSE)              :     1.3060  m
+     RPE translation (RMSE)  :     0.0290  m
+     RPE rotation (RMSE)     :     5.1903  deg
+     Pose Consistency Score  :     0.0000
+
+  -- baseline  vs  '90deg'   (pred: pointclouds/ff887646981745a6_90deg.ply, pred_traj: trajectories/ff887646981745a6_90deg.txt) --
+     Chamfer distance        :     6.2901  m
+     F-score @ 0.05 m         :     0.0212
+     Hausdorff distance      :    26.4008  m
+     ICP fitness             :     0.0306
+     ICP RMSE                :     0.0528  m
+     Inlier ratio            :     0.0306
+     ATE (RMSE)              :     0.8685  m
+     RPE translation (RMSE)  :     0.0356  m
+     RPE rotation (RMSE)     :     3.2909  deg
+     Pose Consistency Score  :     0.0000
+
+  -- baseline  vs  '135deg'   (pred: pointclouds/ff887646981745a6_135deg.ply, pred_traj: trajectories/ff887646981745a6_135deg.txt) --
+     Chamfer distance        :     0.4870  m
+     F-score @ 0.05 m         :     0.2006
+     Hausdorff distance      :     1.6667  m
+     ICP fitness             :     0.4469
+     ICP RMSE                :     0.0496  m
+     Inlier ratio            :     0.4469
+     ATE (RMSE)              :     0.5222  m
+     RPE translation (RMSE)  :     0.0247  m
+     RPE rotation (RMSE)     :     5.1391  deg
+     Pose Consistency Score  :     0.0012
+
+  -- baseline  vs  '180deg'   (pred: pointclouds/ff887646981745a6_180deg.ply, pred_traj: trajectories/ff887646981745a6_180deg.txt) --
+     Chamfer distance        :     0.9885  m
+     F-score @ 0.05 m         :     0.2339
+     Hausdorff distance      :     6.4665  m
+     ICP fitness             :     0.3447
+     ICP RMSE                :     0.0500  m
+     Inlier ratio            :     0.3447
+     ATE (RMSE)              :     1.2536  m
+     RPE translation (RMSE)  :     0.0265  m
+     RPE rotation (RMSE)     :     5.0939  deg
+     Pose Consistency Score  :     0.0000
+
+
+================================================================================================
+SUMMARY TABLE  (one row per [scene, variant] pair)
+================================================================================================
+             Scene   Var     Chamfer       F@5cm        Haus     ICP-fit    ICP-rmse      Inlier         ATE       RPE-t      RPE-r°         PCS
+------------------------------------------------------------------------------------------------------------------------------------------------
+  ff887646981745a6  45de      5.9950      0.0451     60.0398      0.0530      0.0483      0.0530      1.3060      0.0290       5.190      0.0000
+  ff887646981745a6  90de      6.2901      0.0212     26.4008      0.0306      0.0528      0.0306      0.8685      0.0356       3.291      0.0000
+  ff887646981745a6  135d      0.4870      0.2006      1.6667      0.4469      0.0496      0.4469      0.5222      0.0247       5.139      0.0012
+  ff887646981745a6  180d      0.9885      0.2339      6.4665      0.3447      0.0500      0.3447      1.2536      0.0265       5.094      0.0000
+
+================================================================================================
+PER-SCENE AVERAGES  (mean over variant comparisons)
+================================================================================================
+             Scene     Chamfer       F@5cm        Haus     ICP-fit    ICP-rmse      Inlier         ATE       RPE-t      RPE-r°         PCS
+------------------------------------------------------------------------------------------------------------------------------------------
+  ff887646981745a6      3.4402      0.1252     23.6435      0.2188      0.0502      0.2188      0.9876      0.0289       4.679      0.0003

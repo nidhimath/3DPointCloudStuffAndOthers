@@ -5,8 +5,9 @@ that captures *what the camera saw along that trajectory*, so different
 trajectories of the same scene yield visibly different point clouds.
 
 Pipeline (per video):
-  1. Find start image `start_images/<base>.jpg` and trajectory
-     `trajectories/<base>(_suffix).txt` (suffix omitted for `_standard`).
+  1. Find start image `start_images/<base>.jpg` and trajectory:
+     `_standard` → `trajectories/<base>.txt`; `_<digits>` → `<base>_<digits>.txt`;
+     `_*deg` → `trajectories/<full_video_stem>.txt`.
   2. Run Depth Anything V2 (Metric Indoor) on the full-res start image
      (cached per scene → only 4 inferences total for the anchor).
   3. Sample N video frames evenly, pair each with its trajectory pose
@@ -27,6 +28,7 @@ inconsistent.
 
 from __future__ import annotations
 
+import argparse
 import re
 import sys
 import time
@@ -89,14 +91,24 @@ def parse_re10k(path: Path):
 
 def video_to_paths(video_path: Path) -> tuple[Path, Path, str]:
     """Map a video filename to (start_image, trajectory, output_stem)."""
-    stem = video_path.stem  # e.g. "2cf1a544b179b1a7_1" or "..._standard"
-    m = re.match(r"^(.+?)_(standard|\d+)$", stem)
+    stem = video_path.stem  # e.g. "..._standard", "..._4", "..._45deg"
+    if stem.endswith("_standard"):
+        base = stem[: -len("_standard")]
+        image = START_IMAGES / f"{base}.jpg"
+        traj = TRAJECTORIES / f"{base}.txt"
+        return image, traj, stem
+    # e.g. scene_45deg → trajectories/scene_45deg.txt (try before `_\\d+$`)
+    if re.fullmatch(r".+_\d+deg", stem):
+        base = stem.rsplit("_", 1)[0]
+        image = START_IMAGES / f"{base}.jpg"
+        traj = TRAJECTORIES / f"{stem}.txt"
+        return image, traj, stem
+    m = re.match(r"^(.+)_(\d+)$", stem)
     if not m:
         raise ValueError(f"Unrecognised video name: {video_path.name}")
     base, suffix = m.group(1), m.group(2)
     image = START_IMAGES / f"{base}.jpg"
-    traj  = TRAJECTORIES / (f"{base}.txt" if suffix == "standard"
-                            else f"{base}_{suffix}.txt")
+    traj = TRAJECTORIES / f"{base}_{suffix}.txt"
     return image, traj, stem
 
 
@@ -260,7 +272,38 @@ def build_fused_pointcloud(video_path: Path, depth_hr: np.ndarray,
                         VOXEL_SIZE_FUSED, OUTLIER_STD_FUSED, cam_c0)
 
 
+def resolve_video_paths(given: list[str]) -> list[Path]:
+    """Resolve CLI paths; relative paths may be cwd or BASE_DIR."""
+    out: list[Path] = []
+    for raw in given:
+        p = Path(raw).expanduser()
+        if not p.is_absolute():
+            cand = Path.cwd() / p
+            if cand.is_file():
+                p = cand.resolve()
+            else:
+                alt = (BASE_DIR / raw).resolve()
+                p = alt if alt.is_file() else cand.resolve()
+        else:
+            p = p.resolve()
+        if not p.is_file():
+            raise FileNotFoundError(f"Not a file: {raw}")
+        out.append(p)
+    return out
+
+
 def main() -> int:
+    ap = argparse.ArgumentParser(
+        description="Fuse Depth-Anything clouds per generated video trajectory.",
+    )
+    ap.add_argument(
+        "videos",
+        nargs="*",
+        metavar="VIDEO",
+        help="Optional paths to specific .mp4 files; default = all under generated_videos/",
+    )
+    args = ap.parse_args()
+
     if not VIDEOS_DIR.exists():
         print(f"ERROR: missing folder {VIDEOS_DIR}", file=sys.stderr)
         return 1
@@ -270,9 +313,16 @@ def main() -> int:
     print(f"Device: {device}")
     proc, mdl, _is_metric = load_depth_model(device)
 
-    videos = sorted(VIDEOS_DIR.glob("*.mp4"))
+    if args.videos:
+        try:
+            videos = resolve_video_paths(args.videos)
+        except FileNotFoundError as e:
+            print(str(e), file=sys.stderr)
+            return 1
+    else:
+        videos = sorted(VIDEOS_DIR.glob("*.mp4"))
     if not videos:
-        print(f"No .mp4 files found in {VIDEOS_DIR}", file=sys.stderr)
+        print(f"No videos to process.", file=sys.stderr)
         return 1
 
     print(f"\nFound {len(videos)} videos. "
