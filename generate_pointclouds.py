@@ -41,6 +41,8 @@ import torch
 from PIL import Image as PILImage
 from transformers import AutoImageProcessor, AutoModelForDepthEstimation
 
+from frame_grid import compute_fusion_frame_picks, write_fusion_frame_grid
+
 BASE_DIR        = Path(__file__).resolve().parent
 START_IMAGES    = BASE_DIR / "start_images"
 TRAJECTORIES    = BASE_DIR / "trajectories"
@@ -234,13 +236,9 @@ def build_fused_pointcloud(video_path: Path, depth_hr: np.ndarray,
     fx_n, fy_n, cx_n, cy_n = intr_n.mean(axis=0)
 
     # Pair frames ↔ poses via linspace (mirrors notebook), then sub-sample N.
-    n_match = min(len(bgr_frames), len(w2c_all))
-    frame_idx_full = np.linspace(0, len(bgr_frames) - 1, n_match).round().astype(int)
-    pose_idx_full  = np.linspace(0, len(w2c_all) - 1,    n_match).round().astype(int)
-    n_take = max(1, min(n_sample, n_match))
-    sub = np.linspace(0, n_match - 1, n_take).round().astype(int)
-    frame_picks = frame_idx_full[sub]
-    pose_picks  = pose_idx_full[sub]
+    frame_picks, pose_picks = compute_fusion_frame_picks(
+        len(bgr_frames), len(w2c_all), n_sample
+    )
 
     all_pts, all_cols = [], []
 
@@ -400,6 +398,17 @@ def main() -> int:
         sz = out_path.stat().st_size / 1e6
         print(f"  ✓ {out_path.name}  {len(pcd.points):,} pts, {sz:.2f} MB "
               f"({time.time() - t0:.1f}s)")
+        grid_dir = OUT_DIR / "frame_grids"
+        grid_png = grid_dir / f"{stem}_frames.png"
+        try:
+            if write_fusion_frame_grid(
+                video, len(w2c_all), grid_png, N_FRAMES_PER_VIDEO, rows=2, cols=6
+            ):
+                print(f"  ✓ frame grid → {grid_png.relative_to(BASE_DIR)}")
+            else:
+                print("  (frame grid not written — check video decode / frame count)")
+        except Exception as exc:
+            print(f"  (frame grid skipped: {exc!r})")
         n_ok += 1
 
     print("\n" + "=" * 64)
