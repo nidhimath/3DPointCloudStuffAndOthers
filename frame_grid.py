@@ -1,7 +1,8 @@
-"""2×6 contact-sheet PNGs of the exact video frames used for point-cloud fusion.
+"""Contact sheets of fusion-sampled video frames (same pairing as `generate_pointclouds`).
 
-Uses the same linspace frame ↔ pose pairing as `generate_pointclouds.build_fused_pointcloud`.
-Reads only the picked frames via OpenCV seek (no full-video decode).
+- Default: one 2×6 PNG per video.
+- ``--combined``: per scene, one 5×12 PNG — rows are standard then each trajectory variant
+  (numeric: _standard, _1…_4; degrees: _standard, _45deg…_180deg), 12 fusion columns.
 """
 
 from __future__ import annotations
@@ -89,6 +90,7 @@ def build_contact_sheet(
     cell_h: int = 360,
     gutter: int = 2,
     margin: int = 4,
+    font_size: int = 20,
 ) -> PILImage.Image:
     if len(frames_rgb) != rows * cols:
         raise ValueError(f"Need {rows * cols} frames, got {len(frames_rgb)}")
@@ -98,7 +100,7 @@ def build_contact_sheet(
     fh, fw = frames_rgb[0].shape[:2]
     cell_w = max(1, int(round(cell_h * fw / fh)))
 
-    font = _fit_font(20)
+    font = _fit_font(font_size)
     tiles: list[PILImage.Image] = []
     for rgb, lab in zip(frames_rgb, labels, strict=True):
         tile = _letterbox_resize(rgb, cell_w, cell_h)
@@ -134,26 +136,75 @@ def write_fusion_frame_grid(
     cols: int = 6,
 ) -> bool:
     """Write a rows×cols sheet of fusion-sampled frames. Returns False if skipped."""
+    got = collect_twelve_fusion_frames(video_path, num_poses, n_sample=n_sample)
+    if got is None:
+        return False
+    frames, idxs = got
+    labels = [f"t={i}" for i in idxs]
+    sheet = build_contact_sheet(frames, labels, rows=rows, cols=cols)
+    out_png.parent.mkdir(parents=True, exist_ok=True)
+    sheet.save(out_png, format="PNG", optimize=True)
+    return True
+
+
+def collect_twelve_fusion_frames(
+    video_path: Path, num_poses: int, n_sample: int = 12
+) -> tuple[list[np.ndarray], list[int]] | None:
+    """Decode the n_sample fusion frames; returns (frames, frame_indices) or None."""
     n_bgr = _video_frame_count(video_path)
     if n_bgr == 0:
-        return False
-
-    frame_picks, pose_picks = compute_fusion_frame_picks(n_bgr, num_poses, n_sample)
-    if len(frame_picks) == 0:
-        return False
-
+        return None
+    frame_picks, _ = compute_fusion_frame_picks(n_bgr, num_poses, n_sample)
+    if len(frame_picks) != n_sample:
+        return None
     frames: list[np.ndarray] = []
     for fi in frame_picks:
         rgb = read_video_frame_rgb(video_path, int(fi))
         if rgb is None:
-            # Seek can fail on some files; fall back sequential scan for this index
             rgb = _read_frame_sequential_fallback(video_path, int(fi))
         if rgb is None:
-            return False
+            return None
         frames.append(rgb)
+    return frames, [int(x) for x in frame_picks]
 
-    labels = [f"t={int(fi)}" for fi in frame_picks]
-    sheet = build_contact_sheet(frames, labels, rows=rows, cols=cols)
+
+def write_combined_scene_grid(
+    row_videos: list[Path],
+    base_dir: Path,
+    out_png: Path,
+    n_sample: int = 12,
+    rows: int = 5,
+    cols: int = 12,
+    cell_h: int = 160,
+    font_size: int = 14,
+) -> bool:
+    """One sheet: each row is a trajectory video, each column a fusion sample (12)."""
+    if len(row_videos) != rows:
+        return False
+    all_rgb: list[np.ndarray] = []
+    all_labels: list[str] = []
+    for video in row_videos:
+        try:
+            _img, traj_path, _stem = video_to_paths(video, base_dir)
+        except ValueError:
+            return False
+        if not traj_path.is_file():
+            return False
+        n_pose = _parse_re10k_pose_count(traj_path)
+        got = collect_twelve_fusion_frames(video, n_pose, n_sample=n_sample)
+        if got is None:
+            return False
+        frames, idxs = got
+        all_rgb.extend(frames)
+        all_labels.extend(f"t={i}" for i in idxs)
+    sheet = build_contact_sheet(
+        all_rgb,
+        all_labels,
+        rows=rows,
+        cols=cols,
+        cell_h=cell_h,
+        font_size=font_size,
+    )
     out_png.parent.mkdir(parents=True, exist_ok=True)
     sheet.save(out_png, format="PNG", optimize=True)
     return True
@@ -188,6 +239,60 @@ def _parse_re10k_pose_count(path: Path) -> int:
     return n
 
 
+NUMERIC_ROW_ORDER = ["standard", "1", "2", "3", "4"]
+DEGREE_ROW_ORDER = ["standard", "45deg", "90deg", "135deg", "180deg"]
+
+
+def stem_for_scene_row(scene_base: str, row_suffix: str) -> str:
+    return (
+        f"{scene_base}_standard"
+        if row_suffix == "standard"
+        else f"{scene_base}_{row_suffix}"
+    )
+
+
+def stem_index(videos: list[Path]) -> dict[str, Path]:
+    return {p.stem: p.resolve() for p in videos if p.is_file()}
+
+
+def scene_bases_from_stems(idx: dict[str, Path]) -> set[str]:
+    bases: set[str] = set()
+    for stem in idx:
+        if stem.endswith("_standard"):
+            bases.add(stem[: -len("_standard")])
+            continue
+        m = re.fullmatch(r"(.+)_(\d+)deg", stem)
+        if m:
+            bases.add(m.group(1))
+            continue
+        m = re.fullmatch(r"(.+)_(\d+)$", stem)
+        if m:
+            bases.add(m.group(1))
+    return bases
+
+
+def numeric_row_paths(scene_base: str, idx: dict[str, Path]) -> list[Path] | None:
+    out: list[Path] = []
+    for suf in NUMERIC_ROW_ORDER:
+        st = stem_for_scene_row(scene_base, suf)
+        p = idx.get(st)
+        if p is None:
+            return None
+        out.append(p)
+    return out
+
+
+def degree_row_paths(scene_base: str, idx: dict[str, Path]) -> list[Path] | None:
+    out: list[Path] = []
+    for suf in DEGREE_ROW_ORDER:
+        st = stem_for_scene_row(scene_base, suf)
+        p = idx.get(st)
+        if p is None:
+            return None
+        out.append(p)
+    return out
+
+
 def video_to_paths(video_path: Path, base: Path) -> tuple[Path, Path, str]:
     """Same rules as `generate_pointclouds.video_to_paths`."""
     start_images = base / "start_images"
@@ -214,7 +319,7 @@ def video_to_paths(video_path: Path, base: Path) -> tuple[Path, Path, str]:
 
 def main() -> int:
     ap = argparse.ArgumentParser(
-        description="Write 2×6 PNG contact sheets for fusion frames (per video).",
+        description="PNG contact sheets for fusion frames (2×6 per video, or 5×12 per scene).",
     )
     ap.add_argument(
         "videos",
@@ -228,6 +333,11 @@ def main() -> int:
         type=Path,
         default=None,
         help="Output directory (default: pointclouds/frame_grids next to this script)",
+    )
+    ap.add_argument(
+        "--combined",
+        action="store_true",
+        help="Emit one 5×12 sheet per scene: rows standard + (_1…_4) or standard + (_45deg…_180deg).",
     )
     args = ap.parse_args()
 
@@ -248,6 +358,32 @@ def main() -> int:
         return 1
 
     out_dir.mkdir(parents=True, exist_ok=True)
+
+    if args.combined:
+        idx = stem_index(videos)
+        bases = sorted(scene_bases_from_stems(idx))
+        ok = fail = 0
+        for scene_base in bases:
+            for family, row_fn in (
+                ("numeric", numeric_row_paths),
+                ("degrees", degree_row_paths),
+            ):
+                row_paths = row_fn(scene_base, idx)
+                if row_paths is None:
+                    continue
+                out_png = out_dir / f"{scene_base}_fusion_{family}_5x12.png"
+                if write_combined_scene_grid(row_paths, base, out_png):
+                    print(f"✓ {out_png.name}")
+                    ok += 1
+                else:
+                    print(
+                        f"✗ {scene_base} ({family}): trajectories / decode / "
+                        f"need 12 fusion frames per row",
+                    )
+                    fail += 1
+        print(f"Done (combined). {ok} written, {fail} failed. → {out_dir}")
+        return 0 if ok else 1
+
     ok = skip = 0
     for video in videos:
         if not video.is_file():
@@ -271,7 +407,7 @@ def main() -> int:
             print(f"✓ {out_png.name}")
             ok += 1
         else:
-            print(f"✗ {video.name} (decode / frame count)")
+            print(f"✗ {video.name} (decode / frame count / need 12 fusion picks)")
             skip += 1
 
     print(f"Done. {ok} written, {skip} skipped. → {out_dir}")
